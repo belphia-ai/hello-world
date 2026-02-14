@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import './index.css'
 
 const metrics = [
@@ -89,6 +90,115 @@ const Card = ({ children, className = '' }) => (
     {children}
   </div>
 )
+
+const ContactForm = () => {
+  const [status, setStatus] = useState('idle')
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setStatus('loading')
+    setError('')
+
+    const formData = new FormData(event.currentTarget)
+    const payload = Object.fromEntries(formData.entries())
+
+    try {
+      const response = await fetch('https://belphia-ai.vercel.app/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({ error: 'Unable to submit form.' }))
+        throw new Error(data.error || 'Unable to submit form.')
+      }
+
+      setStatus('success')
+      event.currentTarget.reset()
+    } catch (err) {
+      setError(err.message)
+      setStatus('error')
+    } finally {
+      setTimeout(() => {
+        setStatus('idle')
+        setError('')
+      }, 4000)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="text-sm text-slate-300">Name*</label>
+          <input
+            required
+            name="name"
+            className="mt-1 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-white/40 focus:outline-none"
+            placeholder="Ada Lovelace"
+          />
+        </div>
+        <div>
+          <label className="text-sm text-slate-300">Email*</label>
+          <input
+            required
+            name="email"
+            type="email"
+            className="mt-1 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-white/40 focus:outline-none"
+            placeholder="you@company.com"
+          />
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="text-sm text-slate-300">Company</label>
+          <input
+            name="company"
+            className="mt-1 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-white/40 focus:outline-none"
+            placeholder="Belphia Labs"
+          />
+        </div>
+        <div>
+          <label className="text-sm text-slate-300">Urgency</label>
+          <select
+            name="urgency"
+            defaultValue="whenever"
+            className="mt-1 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-white/40 focus:outline-none"
+          >
+            <option value="whenever">Exploring</option>
+            <option value="soon">Need in 1-2 weeks</option>
+            <option value="now">Need this week</option>
+            <option value="critical">Critical incident</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label className="text-sm text-slate-300">What should Minnie handle?*</label>
+        <textarea
+          required
+          name="message"
+          rows={4}
+          className="mt-1 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-white/40 focus:outline-none"
+          placeholder="Describe the automations, ops, or builds you want..."
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <button
+          type="submit"
+          disabled={status === 'loading'}
+          className="rounded-full bg-gradient-to-r from-violet-500 to-indigo-400 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 disabled:opacity-60"
+        >
+          {status === 'loading' ? 'Sending...' : 'Send to Minnie'}
+        </button>
+        {status === 'success' && <span className="text-sm text-emerald-300">Got it. Minnie will reply shortly.</span>}
+        {status === 'error' && <span className="text-sm text-rose-300">{error || 'Unable to submit form right now.'}</span>}
+      </div>
+    </form>
+  )
+}
+
 
 function App() {
   return (
@@ -215,19 +325,8 @@ function App() {
               I’ll guide procurement, installation, credentials, and best practices, then stay on-call to execute missions:
               launches, research, outreach, incidents, and daily assistants. If you can describe the outcome, I’ll automate the grind.
             </p>
-            <div className="flex flex-wrap gap-4">
-              <a className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900" href="mailto:minnie@agentmail.to">
-                Email Minnie
-              </a>
-              <a
-                className="rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-white/80"
-                href="https://t.me/Kevin"
-                target="_blank"
-                rel="noreferrer"
-              >
-                DM on Telegram
-              </a>
-            </div>
+            <ContactForm />
+            <p className="text-sm text-slate-400">Prefer chat? <a className="text-white" href="mailto:minnie@agentmail.to">Email Minnie</a> or <a className="text-white" href="https://t.me/Kevin" target="_blank" rel="noreferrer">DM on Telegram</a>.</p>
           </Card>
         </section>
       </main>
