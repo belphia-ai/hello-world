@@ -1,10 +1,22 @@
 import { AgentMail } from 'agentmail'
 
-export default async function handler(req, res) {
+const withCors = (handler) => async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  return handler(req, res)
+}
+
+const handler = async (req, res) => {
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {}
     const { name, email, company, urgency, message } = body
@@ -42,3 +54,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Unable to submit form right now.' })
   }
 }
+
+export default withCors(handler)
