@@ -241,10 +241,11 @@ const ContactForm = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    const form = event.currentTarget
     setStatus('loading')
     setError('')
 
-    const formData = new FormData(event.currentTarget)
+    const formData = new FormData(form)
     const payload = Object.fromEntries(formData.entries())
 
     try {
@@ -260,7 +261,7 @@ const ContactForm = () => {
       }
 
       setStatus('success')
-      event.currentTarget.reset()
+      form.reset()
     } catch (err) {
       setError(err.message)
       setStatus('error')
