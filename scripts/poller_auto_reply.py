@@ -244,6 +244,14 @@ def pending_key(message_id, sender_email, ts):
     return f"email:{sender_email}:{int(ts)}"
 
 
+def first_name(name, email=''):
+    raw = (name or '').strip()
+    if not raw:
+        raw = (email or '').split('@')[0]
+    token = raw.split()[0] if raw else 'there'
+    return token.strip(" ,.'\"()") or 'there'
+
+
 def compose_lead_followup(name, lead_message):
     msg = (lead_message or '').lower()
     if any(k in msg for k in ['price', 'pricing', 'how much', 'cost', 'quote']):
@@ -281,14 +289,15 @@ def compose_lead_followup(name, lead_message):
 
 
 def send_reply(client, email, name, macro, context=None, subject_hint=None, reply_to_message_id=None):
+    display_name = first_name(name, email)
     if macro:
         subject, template = REPLY_TEMPLATES[macro]
         cap = context.get('cap', '100') if context else '100'
-        body = template.format(name=name or 'there', cap=cap)
+        body = template.format(name=display_name, cap=cap)
     else:
         subject = normalize_reply_subject(subject_hint)
         lead_message = context.get('lead_message', '') if context else ''
-        body = compose_lead_followup(name or 'there', lead_message)
+        body = compose_lead_followup(display_name, lead_message)
 
     headers = None
     if reply_to_message_id:

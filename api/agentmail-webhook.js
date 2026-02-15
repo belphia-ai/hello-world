@@ -33,6 +33,12 @@ const normalizeReplySubject = (subject) => {
   return /^re:/i.test(subject) ? subject : `Re: ${subject}`
 }
 
+const firstName = (name = '', email = '') => {
+  const raw = String(name || '').trim() || String(email || '').split('@')[0]
+  const token = raw.split(/\s+/)[0] || 'there'
+  return token.replace(/[ ,.'"()]/g, '') || 'there'
+}
+
 const composeReply = (name = 'there', text = '') => {
   const msg = String(text || '').toLowerCase()
 
@@ -88,7 +94,7 @@ const handler = async (req, res) => {
 
     const fromFirst = Array.isArray(message?.from) ? message.from[0] : null
     const senderEmail = String(fromFirst?.email || '').toLowerCase()
-    const senderName = String(fromFirst?.name || senderEmail.split('@')[0] || 'there').trim()
+    const senderName = firstName(fromFirst?.name, senderEmail)
 
     if (!senderEmail || senderEmail === INBOX_ID || isSystemSender(senderEmail)) {
       return res.status(200).json({ ok: true, ignored: true })
