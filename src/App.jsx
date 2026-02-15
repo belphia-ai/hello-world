@@ -368,9 +368,9 @@ const ContactForm = () => {
         >
           {status === 'loading' ? 'Sending...' : 'Send to Minnie'}
         </button>
-        {status === 'success' && <span className="text-sm text-emerald-300">Got it. Check your inbox for a confirmation email.</span>}
+        {status === 'success' && <span className="text-sm text-emerald-300">Got it. Thanks — we received your message.</span>}
         {status === 'error' && <span className="text-sm text-rose-300">{error || 'Unable to submit form right now.'}</span>}
-        <span className="text-xs text-slate-400">You’ll get an instant auto-ack + follow up within a working block.</span>
+        <span className="text-xs text-slate-400">We’ll review and follow up through your preferred channel.</span>
       </div>
     </form>
   )
@@ -404,9 +404,9 @@ function App() {
             <div className="mt-8 flex flex-wrap gap-3">
               <a
                 className="rounded-full bg-gradient-to-r from-violet-500 to-indigo-400 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/25"
-                href="mailto:uptightsmile451@agentmail.to"
+                href="https://t.me/Kevin" target="_blank" rel="noreferrer"
               >
-                Start a build sprint
+Start a build sprint on Telegram
               </a>
               <a
                 className="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white/80 hover:border-white/30"
@@ -547,10 +547,10 @@ function App() {
               <ul className="space-y-2 text-sm text-slate-200">
                 <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Same-day reply commitments for net-new leads.</li>
                 <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Auto-generated briefing doc before kickoff.</li>
-                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Optional Telegram or AgentMail follow-up thread.</li>
+                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Optional Telegram follow-up thread.</li>
               </ul>
               <p className="text-sm text-slate-400">
-                Prefer chat? <a className="text-white" href="mailto:uptightsmile451@agentmail.to">Email Minnie</a> or <a className="text-white" href="https://t.me/Kevin" target="_blank" rel="noreferrer">DM on Telegram</a>.
+                Prefer chat? <a className="text-white" href="https://t.me/Kevin" target="_blank" rel="noreferrer">DM on Telegram</a>.
               </p>
             </div>
             <ContactForm />
