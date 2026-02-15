@@ -56,35 +56,58 @@ const capabilities = [
 const advancedUseCases = [
   {
     number: '01',
-    badge: 'Revenue pods',
-    title: 'Campaign-grade onboarding loops',
+    badge: 'Sales ops',
+    title: 'Lead response that never goes cold',
     detail:
-      'Deliver concierge onboarding that feels handcrafted: WhatsApp + Telegram welcome flows, guided intake, document capture, and progress nudges.',
-    outcomes: ['<90s first-response SLA', 'Auto-filed briefs + CRM syncs', 'Handovers with chat + email context'],
+      'New leads get acknowledged in minutes, qualified automatically, and moved into a follow-up sequence so opportunities don’t die in inboxes.',
+    outcomes: ['Instant first reply', 'Qualification prompts per lead', 'Clean handoff summaries for humans'],
   },
   {
     number: '02',
-    badge: 'Ops war room',
-    title: 'Incident + infrastructure command',
+    badge: 'Customer support',
+    title: '24/7 triage without hiring a night shift',
     detail:
-      'Monitor OpenClaw, cron, Solana wallets, and deploy pipelines. Auto-generate remediation plans, ship fixes, or page you with logs attached.',
-    outcomes: ['Self-healing gateway policies', 'Version pinning + rollback plans', 'Budget + usage alerts routed to chat'],
+      'Routine tickets are resolved automatically while edge-cases are escalated with full context, suggested next steps, and priority tags.',
+    outcomes: ['Faster first resolution', 'Lower queue backlog', 'Escalations with ready-to-send drafts'],
   },
   {
     number: '03',
-    badge: 'Growth lab',
-    title: 'Airdrop + market intelligence studio',
+    badge: 'Founder leverage',
+    title: 'Inbox + calendar + status brief in one feed',
     detail:
-      'Spin scanners, verify proofs, snapshot rewards, and keep a running ledger of IE/EMEA campaigns with narrative-ready summaries.',
-    outcomes: ['Solana wallet prep + quests', 'Auto-generated airdrop journals', 'Daily status files + Telegram pings'],
+      'Founders get proactive daily snapshots: what needs a decision, what got resolved, and what slipped risk thresholds overnight.',
+    outcomes: ['One briefing instead of 6 tabs', 'Decision-ready summaries', 'Proactive risk alerts'],
   },
   {
     number: '04',
-    badge: 'Launch runway',
-    title: 'Prototype → production in hours',
+    badge: 'Launch engine',
+    title: 'Ship pages, automations, and updates faster',
     detail:
-      'From landing pages to docs and drip campaigns. I own repo scaffolding, design polish, analytics, and shipping to Pages, Railway, or Cloudflare.',
-    outcomes: ['Designer-quality UI with Tailwind', 'SEO + social cards baked in', 'Post-launch monitoring + changelog drops'],
+      'From campaign page to form routing to follow-up logic, the full go-live stack is built and monitored as one connected system.',
+    outcomes: ['Fewer tool handoffs', 'Cleaner analytics trail', 'Post-launch checks on autopilot'],
+  },
+]
+
+const realWorldUseCases = [
+  {
+    role: 'For agencies',
+    scenario: 'Client asks for “faster lead response” across web + email.',
+    win: 'Minnie captures each lead, sends a tailored acknowledgement, and queues a proposal draft so your team focuses on closing, not chasing.',
+  },
+  {
+    role: 'For ecommerce teams',
+    scenario: 'Support volume spikes after promos and launches.',
+    win: 'Minnie handles order-status, shipping, and return questions instantly, while flagging refund-risk conversations for human review.',
+  },
+  {
+    role: 'For consultants',
+    scenario: 'You lose hours each week to admin and repetitive follow-ups.',
+    win: 'Minnie sends reminders, nudges inactive leads, and compiles client updates into one clean digest you can send in minutes.',
+  },
+  {
+    role: 'For ops-heavy startups',
+    scenario: 'Infra issues happen outside working hours.',
+    win: 'Minnie detects failures, attempts safe recovery, and posts a plain-English incident brief with logs and recommended next actions.',
   },
 ]
 
@@ -232,6 +255,14 @@ const SignalCard = ({ highlight }) => (
   <Card className="p-6 bg-white/5">
     <p className="text-xs uppercase tracking-[0.4em] text-slate-400">{highlight.label}</p>
     <p className="mt-3 text-lg text-slate-200">{highlight.detail}</p>
+  </Card>
+)
+
+const RealWorldCard = ({ item }) => (
+  <Card className="p-6">
+    <p className="text-xs uppercase tracking-[0.35em] text-violet-200/80">{item.role}</p>
+    <p className="mt-3 text-base text-slate-200">{item.scenario}</p>
+    <p className="mt-4 text-sm text-slate-300">{item.win}</p>
   </Card>
 )
 
@@ -450,6 +481,15 @@ function App() {
           <div className="grid gap-6 md:grid-cols-2">
             {advancedUseCases.map((useCase) => (
               <UseCaseCard key={useCase.number} useCase={useCase} />
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-8">
+          <SectionTitle label="Real-world outcomes" kicker="What this changes for end users" />
+          <div className="grid gap-6 md:grid-cols-2">
+            {realWorldUseCases.map((item) => (
+              <RealWorldCard key={item.role} item={item} />
             ))}
           </div>
         </section>
