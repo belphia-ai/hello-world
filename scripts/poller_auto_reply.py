@@ -212,16 +212,22 @@ def parse_internal_lead_relay(subject, preview):
     lines = (preview or '').splitlines()
     lead_name = None
     lead_email = None
-    lead_message = None
+    lead_message = ''
+    capture_message = False
 
     for line in lines:
         l = line.strip()
         if l.lower().startswith('name:'):
             lead_name = l.split(':', 1)[1].strip()
+            capture_message = False
         elif l.lower().startswith('email:'):
             lead_email = l.split(':', 1)[1].strip().lower()
+            capture_message = False
         elif l.lower().startswith('message:'):
+            capture_message = True
             lead_message = l.split(':', 1)[1].strip()
+        elif capture_message and l:
+            lead_message = (lead_message + '\n' + l).strip() if lead_message else l
 
     if lead_email and '@' in lead_email and lead_email != INBOX_ID:
         return {
@@ -238,6 +244,25 @@ def pending_key(message_id, sender_email, ts):
     return f"email:{sender_email}:{int(ts)}"
 
 
+def compose_lead_followup(name, lead_message):
+    msg = (lead_message or '').lower()
+    if any(k in msg for k in ['dealership', 'used car', 'car dealership', 'autotrader']):
+        return (
+            f"Hey {name},\n\n"
+            "Brilliant — this is exactly the kind of sales workflow Minnie is built for.\n\n"
+            "Based on your enquiry, I can set up:\n"
+            "• instant first response to every new lead\n"
+            "• qualification (budget, finance, trade-in, timeline)\n"
+            "• no-show and cold-lead follow-ups\n"
+            "• daily owner summary of hot leads and booked appointments\n\n"
+            "If you reply with your monthly lead volume + channels + whether you want appointment booking, "
+            "I’ll send a fixed-scope implementation plan and price in the next email.\n\n"
+            "– Minnie"
+        )
+
+    return FALLBACK_REPLY.format(name=name or 'there')
+
+
 def send_reply(client, email, name, macro, context=None, subject_hint=None, reply_to_message_id=None):
     if macro:
         subject, template = REPLY_TEMPLATES[macro]
@@ -245,7 +270,8 @@ def send_reply(client, email, name, macro, context=None, subject_hint=None, repl
         body = template.format(name=name or 'there', cap=cap)
     else:
         subject = normalize_reply_subject(subject_hint)
-        body = FALLBACK_REPLY.format(name=name or 'there')
+        lead_message = context.get('lead_message', '') if context else ''
+        body = compose_lead_followup(name or 'there', lead_message)
 
     headers = None
     if reply_to_message_id:
@@ -379,6 +405,8 @@ def main():
                     cap_val = part.strip().strip('$€')
                     break
 
+        lead_message_context = internal_lead['message'] if internal_lead else ''
+
         pkey = pending_key(message_id, sender_email, ts)
         if pkey not in pending_replies:
             pending_replies[pkey] = {
@@ -399,7 +427,7 @@ def main():
                 sender_email,
                 sender_name,
                 macro,
-                {'cap': cap_val} if macro else None,
+                ({'cap': cap_val} if macro else {'lead_message': lead_message_context}),
                 subject_hint=subject,
                 reply_to_message_id=message_id if message_id else None,
             )
