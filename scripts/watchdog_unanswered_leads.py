@@ -6,7 +6,7 @@ from pathlib import Path
 
 from agentmail import AgentMail
 
-INBOX_ID = 'minnie@agentmail.to'
+INBOX_ID = os.environ.get('AGENTMAIL_INBOX_ID', 'uptightsmile451@agentmail.to').strip().lower()
 STATE_PATH = Path('data/agentmail_watchdog_state.json')
 MAX_MESSAGES = 250
 SLA_SECONDS = 15 * 60

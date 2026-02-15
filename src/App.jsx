@@ -404,7 +404,7 @@ function App() {
             <div className="mt-8 flex flex-wrap gap-3">
               <a
                 className="rounded-full bg-gradient-to-r from-violet-500 to-indigo-400 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/25"
-                href="mailto:minnie@agentmail.to"
+                href="mailto:uptightsmile451@agentmail.to"
               >
                 Start a build sprint
               </a>
@@ -550,7 +550,7 @@ function App() {
                 <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Optional Telegram or AgentMail follow-up thread.</li>
               </ul>
               <p className="text-sm text-slate-400">
-                Prefer chat? <a className="text-white" href="mailto:minnie@agentmail.to">Email Minnie</a> or <a className="text-white" href="https://t.me/Kevin" target="_blank" rel="noreferrer">DM on Telegram</a>.
+                Prefer chat? <a className="text-white" href="mailto:uptightsmile451@agentmail.to">Email Minnie</a> or <a className="text-white" href="https://t.me/Kevin" target="_blank" rel="noreferrer">DM on Telegram</a>.
               </p>
             </div>
             <ContactForm />

@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from agentmail import AgentMail
 
 STATE_PATH = Path('data/agentmail_newlead_state.json')
-INBOX_ID = 'minnie@agentmail.to'
+INBOX_ID = os.environ.get('AGENTMAIL_INBOX_ID', 'uptightsmile451@agentmail.to').strip().lower()
 MAX_MESSAGES = 10
 
 def load_last_timestamp():

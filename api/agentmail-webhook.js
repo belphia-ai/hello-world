@@ -1,6 +1,6 @@
 import { AgentMailClient } from 'agentmail'
 
-const INBOX_ID = 'minnie@agentmail.to'
+const INBOX_ID = (process.env.AGENTMAIL_INBOX_ID || 'uptightsmile451@agentmail.to').toLowerCase()
 
 const SYSTEM_SENDER_PATTERNS = [
   'no-reply@',

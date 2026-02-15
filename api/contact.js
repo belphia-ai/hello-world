@@ -33,7 +33,7 @@ const handler = async (req, res) => {
     }
 
     const client = new AgentMailClient({ apiKey })
-    const inboxId = 'minnie@agentmail.to'
+    const inboxId = (process.env.AGENTMAIL_INBOX_ID || 'uptightsmile451@agentmail.to').toLowerCase()
 
     const internalText = `New lead from belphia-ai.com\n\n` +
       `Name: ${name}\n` +
@@ -45,7 +45,7 @@ const handler = async (req, res) => {
     // Single-response model: create one internal lead relay only.
     // Sales reply is handled by the lead poller/webhook logic.
     await client.inboxes.messages.send(inboxId, {
-      to: 'minnie@agentmail.to',
+      to: inboxId,
       subject: `New inbound lead · ${name}`,
       text: internalText,
     })

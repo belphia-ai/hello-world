@@ -43,7 +43,7 @@ SYSTEM_PREVIEW_PATTERNS = [
 
 STATE_PATH = Path('data/agentmail_reply_state.json')
 DB_PATH = Path('leads/leads.db')
-INBOX_ID = 'minnie@agentmail.to'
+INBOX_ID = os.environ.get('AGENTMAIL_INBOX_ID', 'uptightsmile451@agentmail.to').strip().lower()
 MAX_MESSAGES = 150
 STATE_KEEP_MESSAGE_IDS = 1500
 MAX_REPLY_AGE_SECONDS = 72 * 3600
