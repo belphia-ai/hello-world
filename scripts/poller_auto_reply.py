@@ -10,7 +10,8 @@ from agentmail import AgentMail
 STATE_PATH = Path('data/agentmail_state.json')
 DB_PATH = Path('leads/leads.db')
 INBOX_ID = 'minnie@agentmail.to'
-MAX_MESSAGES = 10
+MAX_MESSAGES = 25
+STATE_KEEP_MESSAGE_IDS = 500
 
 REPLY_TEMPLATES = {
     'budget_cap': (
@@ -23,17 +24,36 @@ MACRO_KEYWORDS = {
     'budget_cap': ['don\'t want to spend more', 'spend more than', 'cap at $', 'cap at £', 'cap at €', 'budget cap'],
 }
 
-def load_last_ts():
+FALLBACK_REPLY = (
+    "Hey {name},\n\n"
+    "Thanks for the follow-up — got it. I’m putting together the best option based on your note and will send a concrete recommendation next.\n\n"
+    "If useful, include any budget/timeline constraints and I’ll tailor it precisely.\n\n"
+    "– Minnie"
+)
+
+def load_state():
     if STATE_PATH.exists():
         try:
-            return float(json.loads(STATE_PATH.read_text()).get('last_ts', 0))
+            state = json.loads(STATE_PATH.read_text())
+            return {
+                'last_ts': float(state.get('last_ts', 0)),
+                'processed_message_ids': list(state.get('processed_message_ids', [])),
+            }
         except Exception:
             pass
-    return 0.0
+    return {'last_ts': 0.0, 'processed_message_ids': []}
 
-def save_last_ts(ts):
+
+def save_state(last_ts, processed_message_ids):
     STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    STATE_PATH.write_text(json.dumps({'last_ts': ts}))
+    STATE_PATH.write_text(
+        json.dumps(
+            {
+                'last_ts': last_ts,
+                'processed_message_ids': processed_message_ids[-STATE_KEEP_MESSAGE_IDS:],
+            }
+        )
+    )
 
 
 def init_db():
@@ -103,10 +123,21 @@ def detect_macro(text):
     return None
 
 
-def send_reply(client, email, name, macro, context=None):
-    subject, template = REPLY_TEMPLATES[macro]
-    cap = context.get('cap', '100') if context else '100'
-    body = template.format(name=name or 'there', cap=cap)
+def normalize_reply_subject(subject):
+    if not subject:
+        return 'Re: Follow-up from Minnie'
+    return subject if subject.lower().startswith('re:') else f'Re: {subject}'
+
+
+def send_reply(client, email, name, macro, context=None, subject_hint=None):
+    if macro:
+        subject, template = REPLY_TEMPLATES[macro]
+        cap = context.get('cap', '100') if context else '100'
+        body = template.format(name=name or 'there', cap=cap)
+    else:
+        subject = normalize_reply_subject(subject_hint)
+        body = FALLBACK_REPLY.format(name=name or 'there')
+
     client.inboxes.messages.send(
         inbox_id=INBOX_ID,
         to=email,
@@ -128,7 +159,9 @@ def main():
     resp = client.inboxes.messages.list(inbox_id=INBOX_ID, limit=MAX_MESSAGES)
     messages = resp.messages or []
 
-    last_ts = load_last_ts()
+    state = load_state()
+    last_ts = state['last_ts']
+    processed_message_ids = set(state['processed_message_ids'])
     max_ts = last_ts
     out_summaries = []
 
@@ -138,42 +171,67 @@ def main():
             ts = created.timestamp()
         else:
             ts = datetime.fromisoformat(created.replace('Z', '+00:00')).timestamp()
-        if ts <= last_ts:
+
+        message_id = msg.message_id or ''
+        labels = set(msg.labels or [])
+
+        if message_id and message_id in processed_message_ids:
+            continue
+        if ts <= last_ts and not message_id:
+            continue
+
+        # only process true inbound mailbox messages, not Sent items
+        if 'inbox' not in labels:
             continue
 
         sender_email = 'unknown'
         sender_name = 'unknown'
         if msg.from_:
             if isinstance(msg.from_, str):
-                sender_email = msg.from_.split('<')[-1].rstrip('> ')
+                sender_email = msg.from_.split('<')[-1].rstrip('> ').strip().lower()
                 sender_name = msg.from_.split('<')[0].strip() or sender_email.split('@')[0]
             else:
                 first = msg.from_[0]
-                sender_email = getattr(first, 'email', 'unknown')
+                sender_email = getattr(first, 'email', 'unknown').strip().lower()
                 sender_name = getattr(first, 'name', sender_email.split('@')[0])
-        preview = (msg.preview or msg.text or '')
+
+        if sender_email == INBOX_ID or sender_email == 'unknown':
+            continue
+
+        preview = msg.preview or ''
         subject = msg.subject or '(no subject)'
 
         upsert_lead(sender_email, sender_name, None, 'active', ts)
         log_event(sender_email, 'inbound', subject, preview, ts)
 
         macro = detect_macro(preview)
+        cap_val = None
         if macro:
-            cap_val = None
             for part in preview.split():
                 if part.strip().replace('$', '').replace('€', '').isdigit():
                     cap_val = part.strip().strip('$€')
                     break
-            reply_ts = send_reply(client, sender_email, sender_name, macro, {'cap': cap_val})
-            out_summaries.append(f"Auto-replied to {sender_name}: {macro}")
-            if reply_ts > max_ts:
-                max_ts = reply_ts
-        else:
-            out_summaries.append(f"New message from {sender_name}, no macro match (manual follow-up needed)")
-            if ts > max_ts:
-                max_ts = ts
 
-    save_last_ts(max_ts)
+        reply_ts = send_reply(
+            client,
+            sender_email,
+            sender_name,
+            macro,
+            {'cap': cap_val} if macro else None,
+            subject_hint=subject,
+        )
+
+        if macro:
+            out_summaries.append(f"Auto-replied to {sender_name}: {macro}")
+        else:
+            out_summaries.append(f"Auto-replied to {sender_name}: fallback_follow_up")
+
+        if message_id:
+            processed_message_ids.add(message_id)
+        if reply_ts > max_ts:
+            max_ts = reply_ts
+
+    save_state(max_ts, list(processed_message_ids))
     if out_summaries:
         print('\n'.join(out_summaries))
     else:
