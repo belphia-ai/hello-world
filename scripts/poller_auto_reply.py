@@ -7,11 +7,46 @@ from pathlib import Path
 
 from agentmail import AgentMail
 
+SYSTEM_SENDER_PATTERNS = [
+    'no-reply@',
+    'noreply@',
+    'do-not-reply@',
+    'donotreply@',
+    'notifications@',
+    'mailer-daemon@',
+    'postmaster@',
+    '@vercel.com',
+    '@railway.com',
+    '@railwayapp.com',
+    '@apify.com',
+    '@youtube.com',
+]
+
+SYSTEM_SUBJECT_PATTERNS = [
+    'failed deployment',
+    'new sign-in detected',
+    'verification',
+    'reset your password',
+    'security alert',
+    'invoice',
+    'receipt',
+    'newsletter',
+]
+
+SYSTEM_PREVIEW_PATTERNS = [
+    'unsubscribe',
+    'view in browser',
+    'manage preferences',
+    'automated message',
+    'do not reply',
+]
+
 STATE_PATH = Path('data/agentmail_reply_state.json')
 DB_PATH = Path('leads/leads.db')
 INBOX_ID = 'minnie@agentmail.to'
 MAX_MESSAGES = 150
 STATE_KEEP_MESSAGE_IDS = 1500
+MAX_REPLY_AGE_SECONDS = 72 * 3600
 
 REPLY_TEMPLATES = {
     'budget_cap': (
@@ -141,6 +176,28 @@ def normalize_reply_subject(subject):
     return subject if subject.lower().startswith('re:') else f'Re: {subject}'
 
 
+def is_inbound_message(labels):
+    normalized = {str(l).strip().lower() for l in (labels or [])}
+    if 'sent' in normalized:
+        return False
+    return bool({'received', 'inbox', 'unread'} & normalized)
+
+
+def is_system_sender(sender_email):
+    email = (sender_email or '').lower()
+    return any(pattern in email for pattern in SYSTEM_SENDER_PATTERNS)
+
+
+def is_system_message(subject, preview):
+    s = (subject or '').lower()
+    p = (preview or '').lower()
+    if any(pattern in s for pattern in SYSTEM_SUBJECT_PATTERNS):
+        return True
+    if any(pattern in p for pattern in SYSTEM_PREVIEW_PATTERNS):
+        return True
+    return False
+
+
 def send_reply(client, email, name, macro, context=None, subject_hint=None, reply_to_message_id=None):
     if macro:
         subject, template = REPLY_TEMPLATES[macro]
@@ -182,9 +239,11 @@ def main():
     state = load_state()
     last_ts = state['last_ts']
     processed_message_ids = set(state['processed_message_ids'])
-    max_ts = last_ts
+    max_inbound_ts = last_ts
     out_summaries = []
     red_alerts = []
+
+    now_ts = datetime.now(timezone.utc).timestamp()
 
     for msg in sorted(messages, key=lambda m: m.created_at or '', reverse=False):
         created = msg.created_at
@@ -194,15 +253,21 @@ def main():
             ts = datetime.fromisoformat(created.replace('Z', '+00:00')).timestamp()
 
         message_id = msg.message_id or ''
-        labels = set(msg.labels or [])
+        labels = msg.labels or []
 
         if message_id and message_id in processed_message_ids:
             continue
         if ts <= last_ts and not message_id:
             continue
+        if (now_ts - ts) > MAX_REPLY_AGE_SECONDS:
+            if message_id:
+                processed_message_ids.add(message_id)
+            if ts > max_inbound_ts:
+                max_inbound_ts = ts
+            continue
 
         # only process true inbound mailbox messages, not Sent items
-        if 'inbox' not in labels:
+        if not is_inbound_message(labels):
             continue
 
         sender_email = 'unknown'
@@ -222,6 +287,13 @@ def main():
         preview = msg.preview or ''
         subject = msg.subject or '(no subject)'
 
+        if is_system_sender(sender_email) or is_system_message(subject, preview):
+            if message_id:
+                processed_message_ids.add(message_id)
+            if ts > max_inbound_ts:
+                max_inbound_ts = ts
+            continue
+
         upsert_lead(sender_email, sender_name, None, 'active', ts)
         log_event(sender_email, 'inbound', subject, preview, ts)
 
@@ -234,7 +306,7 @@ def main():
                     break
 
         try:
-            reply_ts = send_reply(
+            send_reply(
                 client,
                 sender_email,
                 sender_name,
@@ -251,16 +323,16 @@ def main():
 
             if message_id:
                 processed_message_ids.add(message_id)
-            if reply_ts > max_ts:
-                max_ts = reply_ts
+            if ts > max_inbound_ts:
+                max_inbound_ts = ts
         except Exception as err:
             red_alerts.append(
                 f"RED ALERT: failed to auto-reply to {sender_name} <{sender_email}> on '{subject}' ({err})"
             )
-            if ts > max_ts:
-                max_ts = ts
+            if ts > max_inbound_ts:
+                max_inbound_ts = ts
 
-    save_state(max_ts, list(processed_message_ids))
+    save_state(max_inbound_ts, list(processed_message_ids))
 
     if out_summaries:
         print('\n'.join(out_summaries))
