@@ -246,17 +246,24 @@ def pending_key(message_id, sender_email, ts):
 
 def compose_lead_followup(name, lead_message):
     msg = (lead_message or '').lower()
-    if any(k in msg for k in ['dealership', 'used car', 'car dealership', 'autotrader']):
+    if any(k in msg for k in ['price', 'pricing', 'how much', 'cost', 'quote']):
         return (
             f"Hey {name},\n\n"
-            "Brilliant — this is exactly the kind of sales workflow Minnie is built for.\n\n"
-            "Based on your enquiry, I can set up:\n"
-            "• instant first response to every new lead\n"
-            "• qualification (budget, finance, trade-in, timeline)\n"
-            "• no-show and cold-lead follow-ups\n"
-            "• daily owner summary of hot leads and booked appointments\n\n"
-            "If you reply with your monthly lead volume + channels + whether you want appointment booking, "
-            "I’ll send a fixed-scope implementation plan and price in the next email.\n\n"
+            "Great question. For a sales-agent setup, pricing depends on channels, lead volume, and whether booking is included.\n\n"
+            "If you share those 3 details, I’ll send a fixed quote and rollout timeline in my next reply.\n\n"
+            "– Minnie"
+        )
+
+    if any(k in msg for k in ['dealership', 'used car', 'car dealership', 'autotrader', 'whatsapp', 'facebook ads']):
+        return (
+            f"Hey {name},\n\n"
+            "Perfect — I can run this as a dealership sales workflow.\n\n"
+            "I’ll handle:\n"
+            "• rapid first response\n"
+            "• lead qualification\n"
+            "• follow-up sequences\n"
+            "• daily sales summary\n\n"
+            "Reply with monthly lead volume + channels + whether you want appointment booking and I’ll send your scoped implementation + pricing.\n\n"
             "– Minnie"
         )
 
@@ -371,15 +378,6 @@ def main():
             continue
 
         if sender_email == 'unknown':
-            continue
-
-        # Strict mode: only reply to initial form submissions (internal lead relay),
-        # not to subsequent inbound thread replies.
-        if not internal_lead:
-            if message_id:
-                processed_message_ids.add(message_id)
-            if ts > max_inbound_ts:
-                max_inbound_ts = ts
             continue
 
         if not internal_lead and sender_email == INBOX_ID:
