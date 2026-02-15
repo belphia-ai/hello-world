@@ -164,6 +164,7 @@ def main():
     processed_message_ids = set(state['processed_message_ids'])
     max_ts = last_ts
     out_summaries = []
+    red_alerts = []
 
     for msg in sorted(messages, key=lambda m: m.created_at or '', reverse=False):
         created = msg.created_at
@@ -212,30 +213,42 @@ def main():
                     cap_val = part.strip().strip('$€')
                     break
 
-        reply_ts = send_reply(
-            client,
-            sender_email,
-            sender_name,
-            macro,
-            {'cap': cap_val} if macro else None,
-            subject_hint=subject,
-        )
+        try:
+            reply_ts = send_reply(
+                client,
+                sender_email,
+                sender_name,
+                macro,
+                {'cap': cap_val} if macro else None,
+                subject_hint=subject,
+            )
 
-        if macro:
-            out_summaries.append(f"Auto-replied to {sender_name}: {macro}")
-        else:
-            out_summaries.append(f"Auto-replied to {sender_name}: fallback_follow_up")
+            if macro:
+                out_summaries.append(f"Auto-replied to {sender_name}: {macro}")
+            else:
+                out_summaries.append(f"Auto-replied to {sender_name}: fallback_follow_up")
 
-        if message_id:
-            processed_message_ids.add(message_id)
-        if reply_ts > max_ts:
-            max_ts = reply_ts
+            if message_id:
+                processed_message_ids.add(message_id)
+            if reply_ts > max_ts:
+                max_ts = reply_ts
+        except Exception as err:
+            red_alerts.append(
+                f"RED ALERT: failed to auto-reply to {sender_name} <{sender_email}> on '{subject}' ({err})"
+            )
+            if ts > max_ts:
+                max_ts = ts
 
     save_state(max_ts, list(processed_message_ids))
+
     if out_summaries:
         print('\n'.join(out_summaries))
     else:
         print('No new messages.')
+
+    if red_alerts:
+        print('\n'.join(red_alerts))
+        raise SystemExit(2)
 
 
 if __name__ == '__main__':
