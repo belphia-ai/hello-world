@@ -1,4 +1,4 @@
-import { AgentMail } from 'agentmail'
+import { AgentMailClient } from 'agentmail'
 
 const withCors = (handler) => async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -25,7 +25,13 @@ const handler = async (req, res) => {
       return res.status(400).json({ error: 'Name, email, and message are required.' })
     }
 
-    const client = new AgentMail({ apiKey: process.env.AGENTMAIL_API_KEY })
+    const apiKey = process.env.AGENTMAIL_API_KEY
+    if (!apiKey) {
+      throw new Error('AGENTMAIL_API_KEY missing')
+    }
+
+    const client = new AgentMailClient({ apiKey })
+    const inboxId = 'minnie@agentmail.to'
 
     const internalText = `New lead from belphia-ai.com\n\n` +
       `Name: ${name}\n` +
@@ -34,16 +40,14 @@ const handler = async (req, res) => {
       `Urgency: ${urgency || 'n/a'}\n` +
       `Message:\n${message}`
 
-    await client.inboxes.messages.send({
-      inbox_id: 'minnie@agentmail.to',
-      to: ['minnie@agentmail.to'],
+    await client.inboxes.messages.send(inboxId, {
+      to: 'minnie@agentmail.to',
       subject: `New inbound lead · ${name}`,
       text: internalText,
     })
 
-    await client.inboxes.messages.send({
-      inbox_id: 'minnie@agentmail.to',
-      to: [email],
+    await client.inboxes.messages.send(inboxId, {
+      to: email,
       subject: 'Received – Minnie from Belphia Autonomous',
       text: `Hey ${name},\n\nThanks for reaching out. I have your brief (see below) and will follow up shortly.\n\n———\n${message}`,
     })
