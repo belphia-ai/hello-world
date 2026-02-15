@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { AgentMailClient } from 'agentmail'
 
 const withCors = (handler) => async (req, res) => {
@@ -53,7 +54,19 @@ const handler = async (req, res) => {
       text: `Hey ${name},\n\nThanks for reaching out. I have your brief (see below) and will follow up shortly.\n\n———\n${message}`,
     })
 
-    return res.status(200).json({ ok: true })
+    const conversionEvent = {
+      event: 'contact_form_submitted',
+      eventId: randomUUID(),
+      timestamp: new Date().toISOString(),
+      source: 'belphia-ai.com',
+      hasCompany: Boolean(company?.trim()),
+      urgency: urgency || 'n/a',
+      messageLength: message.trim().length,
+    }
+
+    console.info('conversion_event', conversionEvent)
+
+    return res.status(200).json({ ok: true, eventId: conversionEvent.eventId })
   } catch (error) {
     console.error('contact form error', error)
     return res.status(500).json({ error: 'Unable to submit form right now.' })
