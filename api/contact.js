@@ -27,7 +27,8 @@ const handler = async (req, res) => {
 
     const apiKey = process.env.AGENTMAIL_API_KEY
     if (!apiKey) {
-      throw new Error('AGENTMAIL_API_KEY missing')
+      console.error('contact form error: AGENTMAIL_API_KEY missing')
+      return res.status(500).json({ error: 'Server misconfigured: missing outbound email channel. Ping Minnie.' })
     }
 
     const client = new AgentMailClient({ apiKey })
