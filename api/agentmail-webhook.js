@@ -27,50 +27,13 @@ const handler = async (req, res) => {
   try {
     const payload = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {}
 
-    // Only care about inbound message events.
+    // Webhook is intentionally passive right now.
+    // Sales follow-up is controlled by the poller in "initial form request only" mode.
     if (payload?.event_type !== 'message.received') {
       return res.status(200).json({ ok: true, ignored: true })
     }
 
-    const message = payload?.message || {}
-    const inboxId = (message?.inbox_id || '').toLowerCase()
-    if (inboxId !== INBOX_ID) {
-      return res.status(200).json({ ok: true, ignored: true })
-    }
-
-    const fromFirst = Array.isArray(message?.from) ? message.from[0] : null
-    const senderEmail = (fromFirst?.email || '').toLowerCase()
-    const senderName = (fromFirst?.name || senderEmail.split('@')[0] || 'there').trim()
-
-    if (!senderEmail || senderEmail === INBOX_ID) {
-      return res.status(200).json({ ok: true, ignored: true })
-    }
-
-    const apiKey = process.env.AGENTMAIL_API_KEY
-    if (!apiKey) {
-      console.error('agentmail webhook error: AGENTMAIL_API_KEY missing')
-      return res.status(500).json({ error: 'missing AGENTMAIL_API_KEY' })
-    }
-
-    const subjectRaw = message?.subject || 'Follow-up from Minnie'
-    const subject = /^re:/i.test(subjectRaw) ? subjectRaw : `Re: ${subjectRaw}`
-
-    const client = new AgentMailClient({ apiKey })
-    const inboundMessageId = message?.message_id || undefined
-
-    await client.inboxes.messages.send(INBOX_ID, {
-      to: senderEmail,
-      subject,
-      text: FALLBACK_REPLY(senderName),
-      headers: inboundMessageId
-        ? {
-            'In-Reply-To': inboundMessageId,
-            References: inboundMessageId,
-          }
-        : undefined,
-    })
-
-    return res.status(200).json({ ok: true, sent: true })
+    return res.status(200).json({ ok: true, ignored: true, mode: 'passive' })
   } catch (error) {
     console.error('agentmail webhook error', error)
     return res.status(500).json({ error: 'webhook processing failed' })

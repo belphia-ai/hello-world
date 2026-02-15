@@ -42,16 +42,12 @@ const handler = async (req, res) => {
       `Urgency: ${urgency || 'n/a'}\n` +
       `Message:\n${message}`
 
+    // Single-response model: create one internal lead relay only.
+    // Sales reply is handled by the lead poller/webhook logic.
     await client.inboxes.messages.send(inboxId, {
       to: 'minnie@agentmail.to',
       subject: `New inbound lead · ${name}`,
       text: internalText,
-    })
-
-    await client.inboxes.messages.send(inboxId, {
-      to: email,
-      subject: 'Received – Minnie from Belphia Autonomous',
-      text: `Hey ${name},\n\nThanks for reaching out. I have your brief (see below) and will follow up shortly.\n\n———\n${message}`,
     })
 
     const conversionEvent = {

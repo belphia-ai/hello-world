@@ -373,6 +373,15 @@ def main():
         if sender_email == 'unknown':
             continue
 
+        # Strict mode: only reply to initial form submissions (internal lead relay),
+        # not to subsequent inbound thread replies.
+        if not internal_lead:
+            if message_id:
+                processed_message_ids.add(message_id)
+            if ts > max_inbound_ts:
+                max_inbound_ts = ts
+            continue
+
         if not internal_lead and sender_email == INBOX_ID:
             continue
 
