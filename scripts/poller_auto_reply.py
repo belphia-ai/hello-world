@@ -7,11 +7,11 @@ from pathlib import Path
 
 from agentmail import AgentMail
 
-STATE_PATH = Path('data/agentmail_state.json')
+STATE_PATH = Path('data/agentmail_reply_state.json')
 DB_PATH = Path('leads/leads.db')
 INBOX_ID = 'minnie@agentmail.to'
-MAX_MESSAGES = 25
-STATE_KEEP_MESSAGE_IDS = 500
+MAX_MESSAGES = 150
+STATE_KEEP_MESSAGE_IDS = 1500
 
 REPLY_TEMPLATES = {
     'budget_cap': (
@@ -26,21 +26,33 @@ MACRO_KEYWORDS = {
 
 FALLBACK_REPLY = (
     "Hey {name},\n\n"
-    "Thanks for the follow-up — got it. I’m putting together the best option based on your note and will send a concrete recommendation next.\n\n"
-    "If useful, include any budget/timeline constraints and I’ll tailor it precisely.\n\n"
+    "Thanks for your email — got it. I’ve logged your question and I’m preparing a direct answer.\n\n"
+    "To move faster, feel free to include:\n"
+    "• target budget\n"
+    "• timeline\n"
+    "• your top priority (cost, speed, or quality)\n\n"
+    "You’ll get a specific follow-up from me shortly.\n\n"
     "– Minnie"
 )
 
 def load_state():
-    if STATE_PATH.exists():
+    candidates = [
+        STATE_PATH,
+        Path('data/agentmail_state.json'),  # legacy path
+    ]
+
+    for path in candidates:
+        if not path.exists():
+            continue
         try:
-            state = json.loads(STATE_PATH.read_text())
+            state = json.loads(path.read_text())
             return {
                 'last_ts': float(state.get('last_ts', 0)),
                 'processed_message_ids': list(state.get('processed_message_ids', [])),
             }
         except Exception:
-            pass
+            continue
+
     return {'last_ts': 0.0, 'processed_message_ids': []}
 
 
@@ -129,7 +141,7 @@ def normalize_reply_subject(subject):
     return subject if subject.lower().startswith('re:') else f'Re: {subject}'
 
 
-def send_reply(client, email, name, macro, context=None, subject_hint=None):
+def send_reply(client, email, name, macro, context=None, subject_hint=None, reply_to_message_id=None):
     if macro:
         subject, template = REPLY_TEMPLATES[macro]
         cap = context.get('cap', '100') if context else '100'
@@ -138,11 +150,19 @@ def send_reply(client, email, name, macro, context=None, subject_hint=None):
         subject = normalize_reply_subject(subject_hint)
         body = FALLBACK_REPLY.format(name=name or 'there')
 
+    headers = None
+    if reply_to_message_id:
+        headers = {
+            'In-Reply-To': reply_to_message_id,
+            'References': reply_to_message_id,
+        }
+
     client.inboxes.messages.send(
         inbox_id=INBOX_ID,
         to=email,
         subject=subject,
         text=body,
+        headers=headers,
     )
     ts = datetime.now(timezone.utc).timestamp()
     log_event(email, 'outbound', subject, body[:200], ts)
@@ -221,6 +241,7 @@ def main():
                 macro,
                 {'cap': cap_val} if macro else None,
                 subject_hint=subject,
+                reply_to_message_id=message_id if message_id else None,
             )
 
             if macro:
