@@ -104,7 +104,7 @@ const ContactForm = () => {
     const payload = Object.fromEntries(formData.entries())
 
     try {
-      const response = await fetch('https://belphia-ai.vercel.app/api/contact', {
+      const response = await fetch('https://hello-world-ivory-six.vercel.app/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
