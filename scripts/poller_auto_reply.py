@@ -267,7 +267,17 @@ def compose_lead_followup(name, lead_message):
             "– Minnie"
         )
 
-    return FALLBACK_REPLY.format(name=name or 'there')
+    return (
+        f"Hey {name},\n\n"
+        "Thanks — I can help scope this properly.\n\n"
+        "To give you a concrete plan + price, reply with:\n"
+        "• monthly lead volume\n"
+        "• channels in use (website, ads, WhatsApp, etc.)\n"
+        "• CRM today (or none)\n"
+        "• whether you want appointment booking included\n\n"
+        "Once I have that, I’ll send your exact implementation and quote.\n\n"
+        "– Minnie"
+    )
 
 
 def send_reply(client, email, name, macro, context=None, subject_hint=None, reply_to_message_id=None):
@@ -443,7 +453,7 @@ def main():
             if macro:
                 out_summaries.append(f"Auto-replied to {sender_name}: {macro}")
             else:
-                out_summaries.append(f"Auto-replied to {sender_name}: fallback_follow_up")
+                out_summaries.append(f"Auto-replied to {sender_name}: sales_dialogue_reply")
 
             pending_replies.pop(pkey, None)
             if message_id:

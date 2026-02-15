@@ -61,12 +61,13 @@ const composeReply = (name = 'there', text = '') => {
 
   return (
     `Hey ${name},\n\n` +
-    `Thanks for your email — got it. I’ve logged your question and I’m preparing a direct answer.\n\n` +
-    `To move faster, feel free to include:\n` +
-    `• target budget\n` +
-    `• timeline\n` +
-    `• your top priority (cost, speed, or quality)\n\n` +
-    `You’ll get a specific follow-up from me shortly.\n\n` +
+    `Thanks — I can help scope this properly.\n\n` +
+    `To give you a concrete plan + price, reply with:\n` +
+    `• monthly lead volume\n` +
+    `• channels in use (website, ads, WhatsApp, etc.)\n` +
+    `• CRM today (or none)\n` +
+    `• whether you want appointment booking included\n\n` +
+    `Once I have that, I’ll send your exact implementation and quote.\n\n` +
     `– Minnie`
   )
 }
