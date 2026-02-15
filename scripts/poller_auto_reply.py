@@ -286,6 +286,17 @@ def main():
 
     now_ts = datetime.now(timezone.utc).timestamp()
 
+    # Detect messages that already received a reply (e.g., webhook fast-path) to avoid duplicates.
+    replied_to_ids = set()
+    for m in messages:
+        labels = {str(x).lower() for x in (m.labels or [])}
+        if 'sent' not in labels:
+            continue
+        headers = m.headers or {}
+        ref = (headers.get('In-Reply-To') or getattr(m, 'in_reply_to', None) or '').strip()
+        if ref:
+            replied_to_ids.add(ref)
+
     for msg in sorted(messages, key=lambda m: m.created_at or '', reverse=False):
         created = msg.created_at
         if isinstance(created, datetime):
@@ -297,6 +308,11 @@ def main():
         labels = msg.labels or []
 
         if message_id and message_id in processed_message_ids:
+            continue
+        if message_id and message_id in replied_to_ids:
+            processed_message_ids.add(message_id)
+            if ts > max_inbound_ts:
+                max_inbound_ts = ts
             continue
         if ts <= last_ts and not message_id:
             continue
