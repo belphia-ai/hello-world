@@ -412,7 +412,8 @@ def main():
                     cap_val = part.strip().strip('$€')
                     break
 
-        lead_message_context = internal_lead['message'] if internal_lead else ''
+        # Use original lead message for new form leads, and live preview text for reply-chain messages.
+        lead_message_context = internal_lead['message'] if internal_lead else preview
 
         pkey = pending_key(message_id, sender_email, ts)
         if pkey not in pending_replies:
