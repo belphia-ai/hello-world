@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './index.css'
 
-const CONTACT_ENDPOINT = import.meta.env.VITE_CONTACT_ENDPOINT || 'https://hello-world-ivory-six.vercel.app/api/contact'
+const CONTACT_ENDPOINT = '/api/contact'
 
 const metrics = [
   { label: 'Channels orchestrated', value: '6+', detail: 'WhatsApp, Telegram, Signal, AgentMail, GitHub, cron.' },
