@@ -47,6 +47,7 @@ INBOX_ID = 'minnie@agentmail.to'
 MAX_MESSAGES = 150
 STATE_KEEP_MESSAGE_IDS = 1500
 MAX_REPLY_AGE_SECONDS = 72 * 3600
+REPLY_SLA_SECONDS = 10 * 60
 
 REPLY_TEMPLATES = {
     'budget_cap': (
@@ -84,20 +85,22 @@ def load_state():
             return {
                 'last_ts': float(state.get('last_ts', 0)),
                 'processed_message_ids': list(state.get('processed_message_ids', [])),
+                'pending_replies': dict(state.get('pending_replies', {})),
             }
         except Exception:
             continue
 
-    return {'last_ts': 0.0, 'processed_message_ids': []}
+    return {'last_ts': 0.0, 'processed_message_ids': [], 'pending_replies': {}}
 
 
-def save_state(last_ts, processed_message_ids):
+def save_state(last_ts, processed_message_ids, pending_replies):
     STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
     STATE_PATH.write_text(
         json.dumps(
             {
                 'last_ts': last_ts,
                 'processed_message_ids': processed_message_ids[-STATE_KEEP_MESSAGE_IDS:],
+                'pending_replies': pending_replies,
             }
         )
     )
@@ -198,6 +201,12 @@ def is_system_message(subject, preview):
     return False
 
 
+def pending_key(message_id, sender_email, ts):
+    if message_id:
+        return f"mid:{message_id}"
+    return f"email:{sender_email}:{int(ts)}"
+
+
 def send_reply(client, email, name, macro, context=None, subject_hint=None, reply_to_message_id=None):
     if macro:
         subject, template = REPLY_TEMPLATES[macro]
@@ -239,6 +248,7 @@ def main():
     state = load_state()
     last_ts = state['last_ts']
     processed_message_ids = set(state['processed_message_ids'])
+    pending_replies = dict(state.get('pending_replies', {}))
     max_inbound_ts = last_ts
     out_summaries = []
     red_alerts = []
@@ -305,6 +315,20 @@ def main():
                     cap_val = part.strip().strip('$€')
                     break
 
+        pkey = pending_key(message_id, sender_email, ts)
+        if pkey not in pending_replies:
+            pending_replies[pkey] = {
+                'first_seen_ts': ts,
+                'last_seen_ts': ts,
+                'attempts': 0,
+                'sender_email': sender_email,
+                'sender_name': sender_name,
+                'subject': subject,
+                'message_id': message_id,
+            }
+        else:
+            pending_replies[pkey]['last_seen_ts'] = ts
+
         try:
             send_reply(
                 client,
@@ -321,18 +345,61 @@ def main():
             else:
                 out_summaries.append(f"Auto-replied to {sender_name}: fallback_follow_up")
 
+            pending_replies.pop(pkey, None)
             if message_id:
                 processed_message_ids.add(message_id)
             if ts > max_inbound_ts:
                 max_inbound_ts = ts
         except Exception as err:
+            pending_replies[pkey]['attempts'] = int(pending_replies[pkey].get('attempts', 0)) + 1
+            pending_replies[pkey]['last_error'] = str(err)
             red_alerts.append(
                 f"RED ALERT: failed to auto-reply to {sender_name} <{sender_email}> on '{subject}' ({err})"
             )
             if ts > max_inbound_ts:
                 max_inbound_ts = ts
 
-    save_state(max_inbound_ts, list(processed_message_ids))
+    # SLA watchdog: if an inbound has remained unanswered for too long, force a fallback attempt.
+    for pkey, item in list(pending_replies.items()):
+        first_seen_ts = float(item.get('first_seen_ts', 0) or 0)
+        if first_seen_ts <= 0:
+            continue
+        age = now_ts - first_seen_ts
+        if age < REPLY_SLA_SECONDS:
+            continue
+
+        sender_email = item.get('sender_email', 'unknown')
+        sender_name = item.get('sender_name', 'there')
+        subject = item.get('subject') or 'Follow-up from Minnie'
+        reply_to_message_id = item.get('message_id') or None
+
+        red_alerts.append(
+            f"RED ALERT: reply SLA breached ({int(age)}s) for {sender_name} <{sender_email}> on '{subject}'. Forcing fallback send."
+        )
+
+        try:
+            send_reply(
+                client,
+                sender_email,
+                sender_name,
+                macro=None,
+                context=None,
+                subject_hint=subject,
+                reply_to_message_id=reply_to_message_id,
+            )
+            out_summaries.append(f"Forced fallback reply to {sender_name} after SLA breach")
+            pending_replies.pop(pkey, None)
+            if reply_to_message_id:
+                processed_message_ids.add(reply_to_message_id)
+        except Exception as err:
+            item['attempts'] = int(item.get('attempts', 0)) + 1
+            item['last_error'] = str(err)
+            pending_replies[pkey] = item
+            red_alerts.append(
+                f"RED ALERT: forced fallback failed for {sender_name} <{sender_email}> on '{subject}' ({err})"
+            )
+
+    save_state(max_inbound_ts, list(processed_message_ids), pending_replies)
 
     if out_summaries:
         print('\n'.join(out_summaries))
