@@ -410,7 +410,7 @@ Start a build sprint on Telegram
               </a>
               <a
                 className="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white/80 hover:border-white/30"
-                href="https://github.com/belphia-ai/hello-world"
+                href="hello-world"
                 target="_blank"
                 rel="noreferrer"
               >
