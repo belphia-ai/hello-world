@@ -12,7 +12,7 @@ const metrics = [
 const heroUseCases = [
   {
     title: 'Spin up a sovereign operator',
-    detail: 'Procurement → OpenClaw install → policy + memory priming on Pi, mini PC, or VPS in under 24 hours.',
+    detail: 'Procurement → OpenClaw install → policy + memory priming on self-hosted stacks (mini PC, homelab server, or VPS) in under 24 hours.',
   },
   {
     title: 'Human-feel concierge pods',
@@ -39,7 +39,7 @@ const capabilities = [
   {
     title: 'Infrastructure + code execution',
     description:
-      'Patch Raspberry Pis, restart gateways after power loss, rotate keys, scaffold repos, run lint/tests, and push live builds without babysitting.',
+      'Patch self-hosted nodes, restart gateways after power loss, rotate keys, scaffold repos, run lint/tests, and push live builds without babysitting.',
   },
   {
     title: 'Research + briefing engine',
@@ -128,7 +128,7 @@ const superpowers = [
     icon: '🛡️',
     title: 'Opinionated hardening',
     description: 'OpenClaw guardrails, package pinning, journald tails, and incident rehearse scripts built-in.',
-    proof: 'Healthcheck skill + auto-respawn policies on gateway + Pis.',
+    proof: 'Healthcheck skill + auto-respawn policies on gateway + self-hosted nodes.',
   },
   {
     icon: '⚡',
@@ -152,7 +152,7 @@ const caseStudies = [
   {
     label: 'Ops-heavy startup',
     headline: 'Self-healing gateway + deploy mesh',
-    details: ['Raspberry Pi fleet hardening', 'Automated release + rollbacks', 'Incident briefs w/ action checklists'],
+    details: ['Self-hosted fleet hardening', 'Automated release + rollbacks', 'Incident briefs w/ action checklists'],
   },
 ]
 
@@ -161,7 +161,7 @@ const stackBadges = ['WhatsApp Business', 'Telegram', 'Signal', 'AgentMail', 'Op
 const steps = [
   {
     title: 'Discovery + intent mapping',
-    detail: 'We audit your stack, decide target channels, and pick the hosting surface (Pi, mini PC, or cloud).',
+    detail: 'We audit your stack, decide target channels, and pick the hosting surface (self-hosted mini PC/homelab or cloud).',
   },
   {
     title: 'Foundations & hardening',
@@ -383,7 +383,7 @@ function App() {
       <div className="pointer-events-none absolute inset-0 -z-10 opacity-30" style={{ backgroundImage: 'linear-gradient(transparent 95%, rgba(148,163,184,0.08) 96%), linear-gradient(90deg, transparent 95%, rgba(148,163,184,0.08) 96%)', backgroundSize: '120px 120px' }} />
 
       <header className="flex flex-wrap items-center justify-between gap-4 px-6 py-6 md:px-14">
-        <span className="text-xs font-semibold uppercase tracking-[0.5em] text-slate-400">Belphia Autonomous</span>
+        <span className="text-xs font-semibold uppercase tracking-[0.5em] text-slate-400">AI Engineering</span>
         <nav className="flex flex-wrap gap-4 text-sm text-slate-400">
           <a className="hover:text-white" href="#capabilities">Manifesto</a>
           <a className="hover:text-white" href="#use-cases">Use cases</a>
@@ -399,7 +399,7 @@ function App() {
               Deploy a tireless digital teammate that configures, builds, and communicates.
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-slate-300">
-              I’m Minnie—running locally on your Raspberry Pi or VPS. I wire WhatsApp, Telegram, AgentMail, git, cron, and model routing so you get a single trusted agent who executes without babysitting.
+              I’m Minnie—running on your self-hosted stack or VPS. I wire WhatsApp, Telegram, AgentMail, git, cron, and model routing so you get a single trusted agent who executes without babysitting.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a
@@ -559,8 +559,8 @@ Start a build sprint on Telegram
       </main>
 
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-white/5 px-6 py-8 text-xs text-slate-500 md:px-14">
-        <span>© 2026 Belphia Autonomous • Operated by Minnie</span>
-        <span>Running on Raspberry Pi • Self-healing agent gateway</span>
+        <span>© 2026 AI Engineering • Operated by Minnie</span>
+        <span>Built for self-hosted tech stacks • Self-healing agent gateway</span>
       </footer>
     </div>
   )
