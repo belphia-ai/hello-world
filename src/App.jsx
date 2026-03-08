@@ -177,6 +177,47 @@ const steps = [
   },
 ]
 
+const deploymentTracks = [
+  {
+    title: 'Homelab-first',
+    fit: 'Best for teams that want maximum control + private networking.',
+    points: ['Tailnet-first access', 'Local data residency', 'Lower long-run infra cost'],
+  },
+  {
+    title: 'VPS-first',
+    fit: 'Best for speed, global availability, and minimal hardware overhead.',
+    points: ['Fast production launch', 'Simple scaling path', 'Managed backups + observability'],
+  },
+  {
+    title: 'Hybrid stack',
+    fit: 'Best when you need private workloads + public web delivery together.',
+    points: ['Sensitive workflows self-hosted', 'Public landing pages on edge', 'Unified ops and incident workflows'],
+  },
+]
+
+const faqs = [
+  {
+    question: 'Can this run fully self-hosted?',
+    answer:
+      'Yes. We can run the agent stack on your own mini PC, homelab server, or private VPS with tailnet/private-network access and hardened defaults.',
+  },
+  {
+    question: 'How fast can we go live?',
+    answer:
+      'A basic production setup is usually live in 24-72 hours, with messaging, memory, monitoring, and one or two high-impact automations.',
+  },
+  {
+    question: 'Do we keep a human approval step?',
+    answer:
+      'Absolutely. Approval gates can be added anywhere: outbound messages, repository pushes, and customer-facing escalations.',
+  },
+  {
+    question: 'What gets monitored after launch?',
+    answer:
+      'Health checks, queue lag, failed jobs, deploy status, and incident summaries—so issues are surfaced early with a clear action path.',
+  },
+]
+
 const SectionTitle = ({ label, kicker }) => (
   <div className="flex items-center gap-3 text-sm uppercase tracking-[0.3em] text-slate-400">
     <span className="h-px flex-1 bg-white/5" aria-hidden />
@@ -255,6 +296,32 @@ const SignalCard = ({ highlight }) => (
   <Card className="p-6 bg-white/5">
     <p className="text-xs uppercase tracking-[0.4em] text-slate-400">{highlight.label}</p>
     <p className="mt-3 text-lg text-slate-200">{highlight.detail}</p>
+  </Card>
+)
+
+const DeploymentTrackCard = ({ track }) => (
+  <Card className="p-6">
+    <h3 className="text-xl font-semibold text-white">{track.title}</h3>
+    <p className="mt-3 text-sm text-slate-300">{track.fit}</p>
+    <ul className="mt-4 space-y-2 text-sm text-slate-200">
+      {track.points.map((point) => (
+        <li key={point} className="flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" aria-hidden />
+          {point}
+        </li>
+      ))}
+    </ul>
+  </Card>
+)
+
+const FaqItem = ({ item }) => (
+  <Card className="p-5">
+    <details className="group">
+      <summary className="cursor-pointer list-none text-base font-semibold text-white">
+        {item.question}
+      </summary>
+      <p className="mt-3 text-sm text-slate-300">{item.answer}</p>
+    </details>
   </Card>
 )
 
@@ -410,7 +477,7 @@ Start a build sprint on Telegram
               </a>
               <a
                 className="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white/80 hover:border-white/30"
-                href="hello-world"
+                href="https://github.com/belphia-ai/hello-world"
                 target="_blank"
                 rel="noreferrer"
               >
@@ -521,6 +588,24 @@ Start a build sprint on Telegram
                 <h3 className="mt-3 text-xl font-semibold text-white">{step.title}</h3>
                 <p className="mt-2 text-sm text-slate-300">{step.detail}</p>
               </Card>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-8">
+          <SectionTitle label="Deployment options" kicker="Pick your operating model" />
+          <div className="grid gap-6 md:grid-cols-3">
+            {deploymentTracks.map((track) => (
+              <DeploymentTrackCard key={track.title} track={track} />
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-8">
+          <SectionTitle label="FAQ" kicker="Before kickoff" />
+          <div className="grid gap-4 md:grid-cols-2">
+            {faqs.map((item) => (
+              <FaqItem key={item.question} item={item} />
             ))}
           </div>
         </section>
